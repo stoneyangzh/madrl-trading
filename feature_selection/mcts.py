@@ -17,41 +17,31 @@ from constants.market_symbol import *
 ####################################################################
 
 class MCTS():
-    def __init__(self, timeLimit=None, iterationLimit=None, Cp = 0.9, explorationConstant=0.1,
+    def __init__(self, iterationLimit=None,
                  X=None, marketSymbol=MarketSymbol.BTC):
-        if timeLimit != None:
-            if iterationLimit != None:
-                raise ValueError("Cannot have both a time limit and an iteration limit")
-            # time taken for each MCTS search in milliseconds
-            self.timeLimit = timeLimit
-            self.limitType = 'time'
-        else:
-            if iterationLimit == None:
-                raise ValueError("Must have either a time limit or an iteration limit")
-            # number of iterations of the search
-            if iterationLimit < 1:
-                raise ValueError("Iteration limit must be greater than one")
-            self.searchLimit = iterationLimit
-            self.limitType = 'iterations'
-        self.Cp = Cp
+        if iterationLimit == None:
+            raise ValueError("Must have either a time limit or an iteration limit")
+        # number of iterations of the search
+        if iterationLimit < 1:
+            raise ValueError("Iteration limit must be greater than one")
+        self.searchLimit = iterationLimit
+        #exploration
+        self.explorationConstant=0.1
+        self.limitType = 'iterations'
         self.marketSymbol = marketSymbol
-        self.explorationConstant = explorationConstant
         self.X = X
         self.level = {}
         self.best_reward = 0.00000000000001
         self.best_sub_features = None
+        self.childs = {}
 
     def search(self, initialState):
         self.root = TreeNode(initialState, None)
-        if self.limitType == 'time':
-            timeLimit = time.time() + self.timeLimit
-            while time.time() < timeLimit:
-                self.executeRound()
-        else:
-            for i in range(self.searchLimit):
-                self.executeRound()
-            self.bestChild = self.getBestChild(self.root, 0)
-        return self.getAction(self.bestChild)
+        for i in range(self.searchLimit):
+            self.executeRound()
+        self.bestChild = self.getBestFeatureSubset()
+        # return self.getAction(self.bestChild)
+        return self.bestChild
 
     def executeRound(self):
         node = self.treePolicy(self.root)
@@ -62,9 +52,17 @@ class MCTS():
         else: self.level[len(m)].append(node)
 
         rolloutReward = self.defaultPolicy(node.state)
-        mReward = rolloutReward[:len(m)]
+        print("====rolloutReward:",rolloutReward)
+        mReward = rolloutReward
 
         self.backpropogate(node, mReward)
+
+    def getBestFeatureSubset(self):
+        bestScore = -10000
+        for reward in self.childs:
+            if(reward > bestScore):
+                bestScore = reward
+        return self.childs[bestScore]
 
     def getBestChild(self, node, explorationValue):
         bestValue = float("-inf")
@@ -97,8 +95,13 @@ class MCTS():
             except IndexError:
                 raise Exception("Non-terminal state has no possible actions: " + str(state))
             state = state.takeAction(action)
+        if "close" not in state.feature_subset:
+            state.feature_subset.append("close")
+
         print("=====features===:", state.feature_subset)
-        return state.getReward(self.X[state.feature_subset], self.marketSymbol)
+        reward = state.getReward(self.X[state.feature_subset], self.marketSymbol)
+        self.childs[reward]=state.feature_subset
+        return reward
 
     def treePolicy(self, node):
         while not node.isTerminal:
@@ -137,13 +140,10 @@ class MCTS():
             node.numVisits += 1
             if node.parent is self.root:
                 node.parent.numVisits += 1
-            node.mReward += (reward[-t] - node.mReward ) / node.numVisits
+            node.mReward += node.mReward / node.numVisits
             node = node.parent
-
-    def getAction(self, bestChild):
-        return bestChild.state.feature_subset
     
-    def pearson_coef_filter(a,b):
+    def pearson_coef_filter(self, a,b):
         Cp = 0.9
         x = []
         y = []

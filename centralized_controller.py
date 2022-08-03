@@ -77,7 +77,7 @@ if __name__ == "__main__":
     eth_path = "data/processed/Binance_ETHUSDT_minute_processed.csv"
     ltc_path = "data/processed/Binance_LTCUSDT_minute_processed.csv"
 
-    test_data= "0700.HK_2012-1-1_2018-1-1.csv"
+    test_data= "data/processed/Binance_BTCUSDT.csv"
 
     data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), test_data)
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     balance = 100000
    
     # Create feature selection agent
-    selected_features = ["Open", "Close", "High", "Low"]
+    selected_features = df.columns
     
     a2c_agent, a2c_sharpe_ratio = training(MarketSymbol.BTC, train_dataset, selected_features, agent_type=AgentType.DQN, timesteps=timesteps)
     print("======sharpe for DQN:", a2c_sharpe_ratio)

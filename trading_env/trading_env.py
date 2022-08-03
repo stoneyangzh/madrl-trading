@@ -23,9 +23,10 @@ class CryptoTradingEnv(gym.Env):
 
 
     def __init__(self, df, marketSymbol, balance=100000, selected_features=None, agent_type=AgentType.A2C, 
-                stateLength=30, transactionCosts=0, startingPoint=0,):
+                stateLength=30, transactionCosts=0):
         self.data = df
         self.balance = balance
+        self.agent_type = agent_type
         print("***********init***************")
 
         if selected_features is None:
@@ -35,11 +36,11 @@ class CryptoTradingEnv(gym.Env):
 
          # State which contains 
         if selected_features is None:
-            self.shape_size = len(df.columns) * (stateLength + 1)
+            self.shape_size = len(df.columns) * (stateLength)
         else:
-            self.shape_size = len(selected_features) * (stateLength + 1)
+            self.shape_size = len(selected_features) * (stateLength)
         
-        self.observation_space = spaces.Box(low=0, high=1, shape=(self.shape_size, ))
+        self.observation_space = spaces.Box(low=0, high=1, shape=(self.shape_size+1, ))
         
         self.data['Position'] = 0
         #Buy, Sell or Hold
@@ -68,10 +69,6 @@ class CryptoTradingEnv(gym.Env):
 
         self.clipingValue = 1
         self.action_space = spaces.Box(low=np.array([0]), high=np.array([2]))
-        self.observation_space = spaces.Box(low=0, high=1, shape=(1+(stateLength)*4,))
-        # If required, set a custom starting point for the trading activity
-        if startingPoint:
-            self.setStartingPoint(startingPoint)
     def nextObservation(self, starting, ending, position=0):
         self.state = []
         for column in self.selected_features:
@@ -116,7 +113,6 @@ class CryptoTradingEnv(gym.Env):
     
 
     def step(self, action):
-        print("====action==:", action[0])
         # Stting of some local variables
         t = self.t
         numberOfShares = self.numberOfShares
@@ -129,49 +125,49 @@ class CryptoTradingEnv(gym.Env):
             # Buy to Buy
             if(self.data['Position'][t - 1] == 1):
                 self.data['Cash'][t] = self.data['Cash'][t - 1]
-                self.data['Holdings'][t] = self.numberOfShares * self.data['Close'][t]
+                self.data['Holdings'][t] = self.numberOfShares * self.data['close'][t]
             #Hold to Buy
             elif(self.data['Position'][t - 1] == 0):
-                self.numberOfShares = math.floor(self.data['Cash'][t - 1]/(self.data['Close'][t] * (1 + self.transactionCosts)))
-                self.data['Cash'][t] = self.data['Cash'][t - 1] - self.numberOfShares * self.data['Close'][t] * (1 + self.transactionCosts)
-                self.data['Holdings'][t] = self.numberOfShares * self.data['Close'][t]
+                self.numberOfShares = math.floor(self.data['Cash'][t - 1]/(self.data['close'][t] * (1 + self.transactionCosts)))
+                self.data['Cash'][t] = self.data['Cash'][t - 1] - self.numberOfShares * self.data['close'][t] * (1 + self.transactionCosts)
+                self.data['Holdings'][t] = self.numberOfShares * self.data['close'][t]
                 self.data['Action'][t] = 1
             # Sell to Buy Position is "-1"
             else:
-                self.data['Cash'][t] = self.data['Cash'][t - 1] - self.numberOfShares * self.data['Close'][t] * (1 + self.transactionCosts)
-                self.numberOfShares = math.floor(self.data['Cash'][t]/(self.data['Close'][t] * (1 + self.transactionCosts)))
-                self.data['Cash'][t] = self.data['Cash'][t] - self.numberOfShares * self.data['Close'][t] * (1 + self.transactionCosts)
-                self.data['Holdings'][t] = self.numberOfShares * self.data['Close'][t]
+                self.data['Cash'][t] = self.data['Cash'][t - 1] - self.numberOfShares * self.data['close'][t] * (1 + self.transactionCosts)
+                self.numberOfShares = math.floor(self.data['Cash'][t]/(self.data['close'][t] * (1 + self.transactionCosts)))
+                self.data['Cash'][t] = self.data['Cash'][t] - self.numberOfShares * self.data['close'][t] * (1 + self.transactionCosts)
+                self.data['Holdings'][t] = self.numberOfShares * self.data['close'][t]
                 self.data['Action'][t] = 1
         # Sell
         elif(action[0] <= 2):
             self.data['Position'][t] = -1
             # Sell to Sell
             if(self.data['Position'][t - 1] == -1):
-                lowerBound = self.computeLowerBound(self.data['Cash'][t - 1], -numberOfShares, self.data['Close'][t-1])
+                lowerBound = self.computeLowerBound(self.data['Cash'][t - 1], -numberOfShares, self.data['close'][t-1])
                 # Hold if lowerBound less or equal to zero
                 if lowerBound <= 0:
                     self.data['Cash'][t] = self.data['Cash'][t - 1]
-                    self.data['Holdings'][t] =  - self.numberOfShares * self.data['Close'][t]
+                    self.data['Holdings'][t] =  - self.numberOfShares * self.data['close'][t]
                 else:
                     #Buy more
                     numberOfSharesToBuy = min(math.floor(lowerBound), self.numberOfShares)
                     self.numberOfShares -= numberOfSharesToBuy
-                    self.data['Cash'][t] = self.data['Cash'][t - 1] - numberOfSharesToBuy * self.data['Close'][t] * (1 + self.transactionCosts)
-                    self.data['Holdings'][t] =  - self.numberOfShares * self.data['Close'][t]
+                    self.data['Cash'][t] = self.data['Cash'][t - 1] - numberOfSharesToBuy * self.data['close'][t] * (1 + self.transactionCosts)
+                    self.data['Holdings'][t] =  - self.numberOfShares * self.data['close'][t]
                     customReward = True
             # Hold to sell
             elif(self.data['Position'][t - 1] == 0):
-                self.numberOfShares = math.floor(self.data['Cash'][t - 1]/(self.data['Close'][t] * (1 + self.transactionCosts)))
-                self.data['Cash'][t] = self.data['Cash'][t - 1] + self.numberOfShares * self.data['Close'][t] * (1 - self.transactionCosts)
-                self.data['Holdings'][t] = - self.numberOfShares * self.data['Close'][t]
+                self.numberOfShares = math.floor(self.data['Cash'][t - 1]/(self.data['close'][t] * (1 + self.transactionCosts)))
+                self.data['Cash'][t] = self.data['Cash'][t - 1] + self.numberOfShares * self.data['close'][t] * (1 - self.transactionCosts)
+                self.data['Holdings'][t] = - self.numberOfShares * self.data['close'][t]
                 self.data['Action'][t] = -1
             # Buy to Sell
             else:
-                self.data['Cash'][t] = self.data['Cash'][t - 1] + self.numberOfShares * self.data['Close'][t] * (1 - self.transactionCosts)
-                self.numberOfShares = math.floor(self.data['Cash'][t]/(self.data['Close'][t] * (1 + self.transactionCosts)))
-                self.data['Cash'][t] = self.data['Cash'][t] + self.numberOfShares * self.data['Close'][t] * (1 - self.transactionCosts)
-                self.data['Holdings'][t] = - self.numberOfShares * self.data['Close'][t]
+                self.data['Cash'][t] = self.data['Cash'][t - 1] + self.numberOfShares * self.data['close'][t] * (1 - self.transactionCosts)
+                self.numberOfShares = math.floor(self.data['Cash'][t]/(self.data['close'][t] * (1 + self.transactionCosts)))
+                self.data['Cash'][t] = self.data['Cash'][t] + self.numberOfShares * self.data['close'][t] * (1 - self.transactionCosts)
+                self.data['Holdings'][t] = - self.numberOfShares * self.data['close'][t]
                 self.data['Action'][t] = -1
 
         # Update the total amount of Balance owned by the agent, as well as the return generated
@@ -182,7 +178,7 @@ class CryptoTradingEnv(gym.Env):
         if not customReward:
             self.reward = self.data['Returns'][t]
         else:
-            self.reward = (self.data['Close'][t-1] - self.data['Close'][t])/self.data['Close'][t-1]
+            self.reward = (self.data['close'][t-1] - self.data['close'][t])/self.data['close'][t-1]
         # Transition to the next trading time step
         self.t = self.t + 1
 
@@ -204,7 +200,8 @@ class CryptoTradingEnv(gym.Env):
         # self.data['Action'] == 1.0
         evaluator = Evaluator(self.data)
         print("=====sharpe ratio:",evaluator.calculateSharpeRatio())
-        self.data.to_csv("Results/resultfile.csv")
+        path = "Results/",self.agent_type.name, "/resultfile.csv"
+        self.data.to_csv(path)
         self.plot()
         self.plot(lable="Balance", legend="Balance")
        
@@ -229,15 +226,6 @@ class CryptoTradingEnv(gym.Env):
         plt.ylabel(legend)
 
         plt.savefig(''.join(['Results/', str(self.marketSymbol),'_',legend, '_Rendering', '.png']))
-
-    def setStartingPoint(self, startingPoint):
-        # Setting a custom starting point
-        self.t = np.clip(startingPoint, self.stateLength, len(self.data.index))
-
-        # Set the RL variables common to every OpenAI gym environments
-        self.state = self.data['Close'][self.t - self.stateLength : self.t].tolist()+self.data['Low'][self.t - self.stateLength : self.t].tolist()+self.data['High'][self.t - self.stateLength : self.t].tolist()+self.data['Volume'][self.t - self.stateLength : self.t].tolist()+[self.data['Position'][self.t - 1]]
-        if(self.t == self.data.shape[0]):
-            self.done = 1
     
     def clip(self, value:float): 
         return np.clip(value, -self.clipingValue, self.clipingValue)

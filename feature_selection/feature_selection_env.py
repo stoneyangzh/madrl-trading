@@ -34,9 +34,8 @@ class FeatureSelectionEnv():
             return False
 
     def getReward(self,X, marketSymbol=MarketSymbol):
-        print("====sssss=",X.columns)
         env_train = CryptoTradingDiscretEnv(X, marketSymbol.name)
-        agent = train_A2C(env_train, timesteps=5000)
+        agent = train_A2C(env_train, timesteps=100)
         evaluator = Evaluator(env_train.data)
         return evaluator.calculateSharpeRatio()
 
