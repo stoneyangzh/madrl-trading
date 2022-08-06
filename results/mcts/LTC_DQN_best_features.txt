@@ -1,0 +1,1 @@
+{'best_features': ['fisht', 'rsi', 'ema', 'williams_r', 'stoch', 'mom', 'er', 'trix', 'cmo', 'macd', 'roc', 'wma', 'low', 'high', 'tsi', 'tr', 'tp', 'open', 'ppo', 'stc', 'psar', 'donchian', 'close'], 'best_score': 0.41238648516023163, 'time': 85.44019794464111}

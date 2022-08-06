@@ -4,7 +4,7 @@
 ####################################################################
 
 class TreeNode():
-    def __init__(self, state, parent):
+    def __init__(self, state, parent, expand_width=12):
         self.children = {}
         self.state = state
         self.isTerminal = state.isTerminal()
@@ -12,7 +12,7 @@ class TreeNode():
         self.numVisits = 0
         self.rolloutReward = 0
         self.mReward = 0
-        self.expand_width = 10
+        self.expand_width = expand_width
 
     def isFullyExpanded(self):
         if len(self.children) == self.expand_width:

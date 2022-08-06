@@ -1,0 +1,1 @@
+{'best_features': ['volume', 'macd', 'fisht', 'high', 'stoch', 'cmo', 'ppo', 'tp', 'trix', 'rsi', 'roc', 'er', 'williams_r', 'tsi', 'close', 'tr', 'ao', 'psar', 'stc', 'wma', 'mom', 'donchian'], 'best_score': 0.3277819357991372, 'time': 100.59297585487366}

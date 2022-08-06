@@ -18,7 +18,9 @@ from constants.market_symbol import *
 
 class MCTS():
     def __init__(self, iterationLimit=None,
-                 X=None, marketSymbol=MarketSymbol.BTC):
+                 X=None, marketSymbol=MarketSymbol.BTC, expand_width=12):
+        seed = 12345
+        np.random.seed(seed)
         if iterationLimit == None:
             raise ValueError("Must have either a time limit or an iteration limit")
         # number of iterations of the search
@@ -34,14 +36,15 @@ class MCTS():
         self.best_reward = 0.00000000000001
         self.best_sub_features = None
         self.childs = {}
+        self.expand_width = expand_width
 
     def search(self, initialState):
-        self.root = TreeNode(initialState, None)
+        self.root = TreeNode(initialState, None, self.expand_width)
         for i in range(self.searchLimit):
             self.executeRound()
-        self.bestChild = self.getBestFeatureSubset()
+        self.bestChild,bestScore = self.getBestFeatureSubset()
         # return self.getAction(self.bestChild)
-        return self.bestChild
+        return self.bestChild, bestScore, self.childs
 
     def executeRound(self):
         node = self.treePolicy(self.root)
@@ -52,7 +55,6 @@ class MCTS():
         else: self.level[len(m)].append(node)
 
         rolloutReward = self.defaultPolicy(node.state)
-        print("====rolloutReward:",rolloutReward)
         mReward = rolloutReward
 
         self.backpropogate(node, mReward)
@@ -62,7 +64,7 @@ class MCTS():
         for reward in self.childs:
             if(reward > bestScore):
                 bestScore = reward
-        return self.childs[bestScore]
+        return self.childs[bestScore],bestScore
 
     def getBestChild(self, node, explorationValue):
         bestValue = float("-inf")
@@ -98,7 +100,6 @@ class MCTS():
         if "close" not in state.feature_subset:
             state.feature_subset.append("close")
 
-        print("=====features===:", state.feature_subset)
         reward = state.getReward(self.X[state.feature_subset], self.marketSymbol)
         self.childs[reward]=state.feature_subset
         return reward
@@ -109,7 +110,6 @@ class MCTS():
                 return self.expand(node)
             else:
                 node = self.getBestChild(node, self.explorationConstant)
-                print('bestChild is',node.state.feature_subset)
         return node
 
     def expand(self, node):
@@ -127,7 +127,7 @@ class MCTS():
             actions = np.asarray(actions)
             action = np.random.choice(actions[filtered_actions])
         else: action  = np.random.choice(actions[:node.expand_width])
-        newNode = TreeNode(node.state.takeAction(action), node)
+        newNode = TreeNode(node.state.takeAction(action), node, self.expand_width)
         node.children[action] = newNode
         newNode.mReward = 0.0
         newNode.numVisits = 0

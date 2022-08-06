@@ -8,7 +8,7 @@ import numpy as np
 ####################################################################
 
 #DQN model
-def train_DQN(env_train, timesteps=10000, learning_rate=1e-4):
+def train_DQN(env_train, timesteps=10000, learning_rate=1e-4,dicount_factor=0.9):
 
     start = time.time()
     model = DQN("MlpPolicy", env_train, verbose=1, learning_rate=learning_rate)

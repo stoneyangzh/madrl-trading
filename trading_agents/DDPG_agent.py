@@ -9,7 +9,7 @@ import numpy as np
 ####################################################################
 
 #DDPG model
-def train_DDPG(env_train, timesteps=1000, learning_rate=1e-3):
+def train_DDPG(env_train, timesteps=1000, learning_rate=1e-3, dicount_factor=0.9):
     # add the noise objects for DDPG
     # n_actions = env_train.action_space.shape[-1]
     # action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
