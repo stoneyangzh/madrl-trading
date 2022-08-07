@@ -4,6 +4,7 @@ import ast
 import matplotlib.pyplot as plt
 
 from util.file_util import *
+import matplotlib.dates as mdates
 
 def process_mcts_parameters_result_file():
     file_name = ["results/mcts/hypers/BTC_DQN_mcts_hypers.txt"
@@ -51,12 +52,8 @@ def calculate_dr():
     print("LTC-MULTI-AGENT,",100*(1-(number_features/26)))
 
 def plot_dr():
-    
-
-
     df = pd.read_csv("results/mcts/dr.csv")
     np.random.seed(19680801)
-
 
     # plt.rcdefaults()
     fig, ax = plt.subplots()
@@ -64,16 +61,91 @@ def plot_dr():
     values = list(df["dr"])
     fig, axs = plt.subplots(1, 1, figsize=(12, 8), sharey=True)
     axs.bar(names, values, width=0.3)
-
     
     # axs[1].scatter(names, values)
     # axs[2].plot(names, values)
     # fig.suptitle('Categorical Plotting')
     axs.set_ylabel("Dimension Reduction Ratio(%)")
     axs.set_xlabel("Dataset and trading agent")
+def process_hyper_parameters_agents_result_file():
+    file_name = ["results/trading/hypers/BTC_DQN_trading_hypers.txt"
+    ,"results/trading/hypers/BTC_MULTI_AGENT_trading_hypers.txt"
+    ,"results/trading/hypers/ETH_DQN_trading_hypers.txt"
+    ,"results/trading/hypers/ETH_MULTI_AGENT_trading_hypers.txt",
+    "results/trading/hypers/LTC_DQN_trading_hypers.txt",
+    "results/trading/hypers/LTC_MULTI_AGENT_trading_hypers.txt"]
+    names = ["BTC_DQN", "BTC_MULTI_AGENT", "ETH_DQN", "ETH_MULTI_AGENT","LTC_DQN", "LTC_MULTI_AGENT"]
+    the_df = pd.DataFrame.from_dict({})
+    index = 0
+    for filename in file_name:
+        result_str = read_file(filename)
+        btc_dqn_agents_hypers = ast.literal_eval(result_str)
+        for iter in btc_dqn_agents_hypers:
+            epoch = btc_dqn_agents_hypers[iter]
+            per_table = epoch["performance_table"]
+            hyper_params = "learning_rate:{}-dicount_factor:{}-total_time_step:{}".format( epoch["learning_rate"], epoch["dicount_factor"], epoch["total_time_step"])
+            epoch["hyper_parameters"] = hyper_params
+            epoch["sharp_ratio"] = per_table[3][1]
+            epoch["training_mins"] = epoch["time"]
+            del epoch["performance_table"]
+            del epoch["time"]
+            next_df = pd.DataFrame(epoch,index=[names[index]])
+            the_df = pd.concat([the_df, next_df])
+        index+=1
+    the_df.to_csv("results/trading/hypers/results.csv")
+def plot_trading_activities_agents_(without_features=False):
+    if without_features is False:
+        file_name = ["results/trading/BTC_DQN_features.csv"
+        ,"results/trading/BTC_MULTI_AGENT_features.csv"
+        ,"results/trading/ETH_DQN_features.csv"
+        ,"results/trading/ETH_MULTI_AGENT_features.csv",
+        "results/trading/LTC_DQN_features.csv",
+        "results/trading/LTC_MULTI_AGENT_features.csv"]
+    else:
+         file_name = ["results/trading/BTC_DQN_without_features.csv"
+        ,"results/trading/BTC_MULTI_AGENT_without_features.csv"
+        ,"results/trading/ETH_DQN_without_features.csv"
+        ,"results/trading/ETH_MULTI_AGENT_without_features.csv",
+        "results/trading/LTC_DQN_without_features.csv",
+        "results/trading/LTC_MULTI_AGENT_without_features.csv"]
+    names = ["BTC_DQN", "BTC_MULTI_AGENT", "ETH_DQN", "ETH_MULTI_AGENT","LTC_DQN", "LTC_MULTI_AGENT"]
+
+    index = 0
+    for filename in file_name:
+        
+        for i in range(2):
+            df = pd.read_csv(filename, index_col="date", parse_dates=True)
+            fig, ax = plt.subplots(figsize=(20, 8))
+
+            half_year_locator = mdates.MonthLocator(interval=10)
+            ax.xaxis.set_major_locator(half_year_locator)
+            if i == 0:
+                lable = "close"
+                legend = "Price"
+            else:
+                lable = "Balance"
+                legend = "Balance"
+            ax.plot(df[lable].index, df[lable])
+            ax.plot(df.loc[df['Action'] == 1.0].index, 
+                        df[lable][df['Action'] == 1.0],
+                        '^', markersize=5, color='green')   
+            ax.plot(df.loc[df['Action'] == -1.0].index, 
+                        df[lable][df['Action'] == -1.0],
+                        'v', markersize=5, color='red')
+            plt.legend([legend, "Buy",  "Sell"])
+            plt.xlabel('Date time')
+            plt.ylabel(legend)
+            if without_features is False:
+                plt.savefig(''.join(['figures/trading/', str(names[index]),'_',legend, '.png']))
+            else:
+                plt.savefig(''.join(['figures/trading/without_features/', str(names[index]),'_',legend, '_without.png']))
+        index += 1
 
 if __name__ == "__main__":
     #process_mcts_parameters_result_file()
     # plot_mcts_hyper_parameters()
     # calculate_dr()
-    plot_dr()
+    #plot_dr()
+    #process_hyper_parameters_agents_result_file()
+    # plot_trading_activities_agents_()
+    plot_trading_activities_agents_(without_features=True)

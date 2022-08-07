@@ -1,0 +1,1 @@
+{'performance_table': [['Profit & Loss (P&L)', '5299'], ['Annualized Return', '54.79%'], ['Annualized Volatility', '34.44%'], ['Sharpe Ratio', '0.216'], ['Profitability', '50.08%'], ['Ratio Average Profit/Loss', '0.998']], 'time': 24.402310848236084}

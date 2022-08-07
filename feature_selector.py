@@ -53,7 +53,7 @@ def tune_hyperparameters():
                 best_feature_subset,best_score, features_and_reward = mcts.search(initialState=initialState)
                 
                 elapsed = time.time() - start
-                print('time=',elapsed)
+                print('time=',elapsed/60)
 
                 best_score_best_features["iteration"] = iteration
                 best_score_best_features["expand_width"] = expand_width
@@ -100,7 +100,7 @@ def run_feature_selection():
             best_feature_subset,best_score, features_and_reward = mcts.search(initialState=initialState)
             
             elapsed = time.time() - start
-            print('time=',elapsed)
+            print('time=',elapsed/60)
 
             best_score_best_features["best_features"] = best_feature_subset
             best_score_best_features["best_score"] = best_score

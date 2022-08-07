@@ -211,7 +211,12 @@ class CryptoTradingDiscretEnv(gym.Env):
         plt.xlabel('Timestamp')
         plt.ylabel(legend)
 
-        plt.savefig(''.join(['Results/', str(self.marketSymbol),'_',legend, '_Rendering', '.png']))
+        plt.savefig(''.join(['results/', str(self.marketSymbol),'_',legend, '_Rendering', '.png']))
     
     def clip(self, value:float): 
         return np.clip(value, -self.clipingValue, self.clipingValue)
+
+    def get_data(self,):
+        self.data.drop(self.data[self.data['Balance'] == self.balance].index, inplace = True)
+        return self.data
+
