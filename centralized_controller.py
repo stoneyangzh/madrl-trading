@@ -124,8 +124,7 @@ def run_trading_agents(feature_seleted="_features"):
     datasets_files = ["data/processed/Binance_BTCUSDT_minute_processed.csv", "data/processed/Binance_ETHUSDT_minute_processed.csv", "data/processed/Binance_LTCUSDT_minute_processed.csv"]
     marketSymbols = [MarketSymbol.BTC, MarketSymbol.ETH, MarketSymbol.LTC]
     selected_feature_subsets= {"BTCDQN":"psar,tsi,fisht,tp,volume,open,stoch,ppo,williams_r,mom,macd,cmo,stc,wma,low,trix,roc,donchian,tr,rsi,ao,close","ETHDQN":"volume,stc,stoch,low,cmo,macd,psar,tr,williams_r,wma,trix,donchian,ao,ema,close,tsi,roc,high,tp,fisht,ppo,rsi","LTCDQN":"fisht,rsi,ema,williams_r,stoch,mom,er,trix,cmo,macd,roc,wma,low,high,tsi,tr,tp,open,ppo,stc,psar,donchian,close","BTCMULTI_AGENT":"williams_r,cmo,ema,trix,high,macd,psar,stc,ppo,close,tr,volume,tp,low,fisht,wma,donchian,mom,ao,er,rsi,stoch","ETHMULTI_AGENT":"volume,macd,fisht,high,stoch,cmo,ppo,tp,trix,rsi,roc,er,williams_r,tsi,close,tr,ao,psar,stc,wma,mom,donchian","LTCMULTI_AGENT":"open,er,stc,fisht,ppo,tsi,close,ao,mom,low,stoch,roc,wma,tp,psar,trix,macd,cmo,williams_r,ema,rsi,donchian"}
-    # hyper_parameters = {"BTCDQN":[0.1,0.8,100000],"ETHDQN":[0.1,0.86,300000],"LTCDQN":[0.1,0.8,300000],"BTCMULTI_AGENT":[0.7,0.84,500000],"ETHMULTI_AGENT":[0.007,0.82,300000],"LTCMULTI_AGENT":[0.0007,0.84,500000]}
-    hyper_parameters = {"BTCDQN":[0.1,0.8,5000],"ETHDQN":[0.1,0.86,5000],"LTCDQN":[0.1,0.8,5000],"BTCMULTI_AGENT":[0.7,0.84,5000],"ETHMULTI_AGENT":[0.007,0.82,5000],"LTCMULTI_AGENT":[0.0007,0.84,5000]}
+    hyper_parameters = {"BTCDQN":[0.1,0.8,100000],"ETHDQN":[0.1,0.86,300000],"LTCDQN":[0.1,0.8,300000],"BTCMULTI_AGENT":[0.7,0.84,500000],"ETHMULTI_AGENT":[0.007,0.82,300000],"LTCMULTI_AGENT":[0.0007,0.84,500000]}
     
     markers_index = 0
     for filename in datasets_files:
