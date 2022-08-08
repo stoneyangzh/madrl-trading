@@ -150,4 +150,4 @@ if __name__ == "__main__":
     # plot_trading_activities_agents_()
     #plot_trading_activities_agents_(without_features=True)
 
-    print((1162096.33)--50645.0)
+    print((0.62)--0.09)
