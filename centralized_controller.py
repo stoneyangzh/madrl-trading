@@ -75,12 +75,11 @@ def hyper_paramters_tuning():
     balance = 100000
    
     # Create feature selection agent
-    
-    datasets_files = ["data/processed/Binance_BTCUSDT_minute_processed.csv", "data/processed/Binance_ETHUSDT_minute_processed.csv", "data/processed/Binance_LTCUSDT_minute_processed.csv"]
+    datasets_files = ["data/processed/Binance_BTCUSDT_minute_processed.csv", 
+    "data/processed/Binance_ETHUSDT_minute_processed.csv", "data/processed/Binance_LTCUSDT_minute_processed.csv"]
     marketSymbols = [MarketSymbol.BTC, MarketSymbol.ETH, MarketSymbol.LTC]
     markers_index = 0
     for filename in datasets_files:
-        
         agents = [AgentType.DQN, AgentType.MULTI_AGENT]
         learning_rates_dqn = [1e-1, 1e-2,1e-3,1e-4,1e-5]
         learning_rates_multi = [7e-1,7e-3,7e-3,7e-4,7e-5]

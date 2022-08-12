@@ -12,39 +12,47 @@ from centralized_controller import *
 ####################################################################
 
 class FeatureSelectionEnv():
-    def __init__(self, Feature_COLUMNS, agent_type: AgentType.MULTI_AGENT, total_time_steps=5000, learning_rate=7e-4, search_depth=22):
-        self.Feature_COLUMNS = Feature_COLUMNS
+    def __init__(self, all_features, agent_type: AgentType.MULTI_AGENT, total_time_steps=5000, learning_rate=7e-4, search_depth=22):
+        """
+        Init parameters of the environment for the MCTS feature selection
+        """
+        self.all_features = all_features
         self.feature_subset = []
         self.search_depth = search_depth
         self.agent_type = agent_type
         self.learning_rate = learning_rate
         self.total_time_steps = total_time_steps
-
-    def getPossibleActions(self,children):
-        possibleActions = []
-        for i in self.Feature_COLUMNS:
+    def getPossibleFeatures(self,children):
+        """
+        Returns possible(available features which are not being added in the subset) features
+        """
+        possibleFeatures = []
+        for i in self.all_features:
             if i not in self.feature_subset and i not in children:
-                possibleActions.append(i)
-        return possibleActions
-
-    def takeAction(self,action):
+                possibleFeatures.append(i)
+        return possibleFeatures
+    def addFeature(self,feature):
+        """
+        Add a feature to the subset
+        """
         newState = deepcopy(self)
-        newState.feature_subset.append(str(action))
+        newState.feature_subset.append(str(feature))
         return newState
-
     def isTerminal(self):
         if len(self.feature_subset) > self.search_depth:
             return True
         else:
             return False
-
     def getReward(self,X, marketSymbol=MarketSymbol):
+        """
+        Here, using DQN agent or A2C agent as the reward function of the MCTS feature selection
+        """
         if self.agent_type is AgentType.DQN:
             agent, sharpRatio,data = trainig(marketSymbol, X, X.columns, self.agent_type,self.learning_rate)
-            return sharpRatio
         else:
-            agent, sharpRatio,data = trainig(marketSymbol, X, X.columns, AgentType.A2C, self.learning_rate)
-            return sharpRatio
+            agent, sharpRatio,data = trainig(marketSymbol, X, X.columns, AgentType.MULTI_AGENT, self.learning_rate)
+        return sharpRatio
+
 
     def __str__(self):
         return str(self.feature_subset)

@@ -37,16 +37,67 @@ class MCTS():
         self.best_sub_features = None
         self.childs = {}
         self.expand_width = expand_width
-
     def search(self, initialState):
         self.root = TreeNode(initialState, None, self.expand_width)
         for i in range(self.searchLimit):
-            self.executeRound()
+            self.simulate()
         self.bestChild,bestScore = self.getBestFeatureSubset()
-        # return self.getAction(self.bestChild)
         return self.bestChild, bestScore, self.childs
 
-    def executeRound(self):
+    def defaultPolicy(self,state):
+        while len(state.feature_subset) < state.search_depth and len(state.feature_subset) < len(state.Feature_COLUMNS):
+            try:
+                action = random.choice(state.getPossibleFeatures(state.feature_subset))
+            except IndexError:
+                raise Exception("Non-terminal state has no possible features: " + str(state))
+            state = state.addFeature(action)
+        if "close" not in state.feature_subset:
+            state.feature_subset.append("close")
+
+        reward = state.getReward(self.X[state.feature_subset], self.marketSymbol)
+        self.childs[reward]=state.feature_subset
+        return reward
+
+    def treePolicy(self, node):
+        while not node.isTerminal:
+            if not node.isFullyExpanded():
+                return self.expand(node)
+            else:
+                node = self.getBestChild(node, self.explorationConstant)
+        return node
+
+    def expand(self, node):
+        filtered_actions = []
+        exclude_list = []
+        if node.parent in self.root.children:
+            exclude_list = list(self.root.children.keys())
+            exclude_list.append(node.children.keys())
+        else:
+            exclude_list=list(node.children.keys())
+        actions = node.state.getPossibleFeatures(exclude_list)
+        if node is not self.root:
+            for action in actions:
+                filtered_actions.append(self.pearson_coef_filter(self.X.loc[:,node.state.feature_subset],self.X.loc[:,action] ))
+            actions = np.asarray(actions)
+            action = np.random.choice(actions[filtered_actions])
+        else: action  = np.random.choice(actions[:node.expand_width])
+        newNode = TreeNode(node.state.addFeature(action), node, self.expand_width)
+        node.children[action] = newNode
+        newNode.mReward = 0.0
+        newNode.numVisits = 0
+        return newNode
+
+    def backpropogate(self, node, reward):
+        t = 0
+        while node is not self.root:
+            t += 1
+            node.numVisits += 1
+            if node.parent is self.root:
+                node.parent.numVisits += 1
+            node.mReward += node.mReward / node.numVisits
+            node = node.parent
+
+    def simulate(self):
         node = self.treePolicy(self.root)
         m = node.state.feature_subset
         
@@ -89,59 +140,6 @@ class MCTS():
                     elif nodeValue == bestValue:
                         bestNodes.append(i)                    
             return np.random.choice(bestNodes)
-
-    def defaultPolicy(self,state):
-        while len(state.feature_subset) < state.search_depth and len(state.feature_subset) < len(state.Feature_COLUMNS):
-            try:
-                action = random.choice(state.getPossibleActions(state.feature_subset))
-            except IndexError:
-                raise Exception("Non-terminal state has no possible actions: " + str(state))
-            state = state.takeAction(action)
-        if "close" not in state.feature_subset:
-            state.feature_subset.append("close")
-
-        reward = state.getReward(self.X[state.feature_subset], self.marketSymbol)
-        self.childs[reward]=state.feature_subset
-        return reward
-
-    def treePolicy(self, node):
-        while not node.isTerminal:
-            if not node.isFullyExpanded():
-                return self.expand(node)
-            else:
-                node = self.getBestChild(node, self.explorationConstant)
-        return node
-
-    def expand(self, node):
-        filtered_actions = []
-        exclude_list = []
-        if node.parent in self.root.children:
-            exclude_list = list(self.root.children.keys())
-            exclude_list.append(node.children.keys())
-        else:
-            exclude_list=list(node.children.keys())
-        actions = node.state.getPossibleActions(exclude_list)
-        if node is not self.root:
-            for action in actions:
-                filtered_actions.append(self.pearson_coef_filter(self.X.loc[:,node.state.feature_subset],self.X.loc[:,action] ))
-            actions = np.asarray(actions)
-            action = np.random.choice(actions[filtered_actions])
-        else: action  = np.random.choice(actions[:node.expand_width])
-        newNode = TreeNode(node.state.takeAction(action), node, self.expand_width)
-        node.children[action] = newNode
-        newNode.mReward = 0.0
-        newNode.numVisits = 0
-        return newNode
-
-    def backpropogate(self, node, reward):
-        t = 0
-        while node is not self.root:
-            t += 1
-            node.numVisits += 1
-            if node.parent is self.root:
-                node.parent.numVisits += 1
-            node.mReward += node.mReward / node.numVisits
-            node = node.parent
     
     def pearson_coef_filter(self, a,b):
         Cp = 0.9

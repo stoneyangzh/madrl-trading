@@ -19,14 +19,11 @@ class CryptoTradingDiscretEnv(gym.Env):
     """
     A customized trading environment extended from OpenAI gym.
     """
-
-
     def __init__(self, df, marketSymbol, balance=100000, selected_features=None, agent_type=AgentType.A2C, 
                 stateLength=30, transactionCosts=0):
         self.data = df
         self.balance = balance
         self.agent_type = agent_type
-        print("***********init***************")
 
         if selected_features is None:
             self.selected_features = df.columns
