@@ -23,10 +23,12 @@ def run_multi_agent(marketSymbol:MarketSymbol.BTC, train_dataset, selected_featu
     print("======sharpe for DDPG:", ddpg_sharpe_ratio)
     if a2c_sharpe_ratio > ddpg_sharpe_ratio:
         print("Best agent is A2C")
+        # save the best agent as A2C and return it.
         a2c_agent.save(f"{TRAINED_AGENT_DIR}/{AgentType.A2C.name}")
         return a2c_agent,a2c_sharpe_ratio,data
     else:
         print("Best agent is DDPG")
+         # save the best agent as DDPG and return it.
         ddpg_agent.save(f"{TRAINED_AGENT_DIR}/{AgentType.DDPG.name}")
         return ddpg_agent, ddpg_sharpe_ratio,data
 

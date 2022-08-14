@@ -20,26 +20,26 @@ class CryptoTradingEnv(gym.Env):
     """
     A customized trading environment extended from OpenAI gym.
     """
-
-
     def __init__(self, df, marketSymbol, balance=100000, selected_features=None, agent_type=AgentType.A2C, 
                 stateLength=30, transactionCosts=0):
         self.data = df
         self.balance = balance
         self.agent_type = agent_type
-        print("***********init***************")
-
+        
         if selected_features is None:
             self.selected_features = df.columns
         else:
             self.selected_features = selected_features
 
-         # State which contains 
+        # compute the state length
         if selected_features is None:
             self.shape_size = len(df.columns) * (stateLength)
         else:
             self.shape_size = len(selected_features) * (stateLength)
         
+        #action space
+        self.action_space = spaces.Box(low=np.array([0]), high=np.array([2]))
+        #state(or observation) space
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.shape_size+1, ))
         
         self.data['Position'] = 0
@@ -53,64 +53,24 @@ class CryptoTradingEnv(gym.Env):
         #Return
         self.data['Returns'] = 0.
 
-
         self.marketSymbol = marketSymbol
         self.stateLength = stateLength
         self.t = stateLength
         self.numberOfShares = 0
-        #To simulate exchange's transaction fee
         self.transactionCosts = transactionCosts
         self.epsilon = 0.1
 
-        # Initialized state for RL agents
+        # Init state
         self.nextObservation(0, self.stateLength)
         self.reward = 0.
         self.done = 0
-
         self.clipingValue = 1
-        self.action_space = spaces.Box(low=np.array([0]), high=np.array([2]))
+       
     def nextObservation(self, starting, ending, position=0):
         self.state = []
         for column in self.selected_features:
             self.state += self.data[column][starting: ending].tolist()
         self.state += [position]
-
-    def reset(self):
-        print("***********reset***************")
-        # Reset the trading activity dataframe
-        # self.data['Position'] = 0
-        # self.data['Action'] = 0
-        # self.data['Holdings'] = 0.
-        # self.data['Cash'] = self.data['Cash'][0]
-        # self.data['Balance'] = self.data['Holdings'] + self.data['Cash']
-        # self.data['Returns'] = 0.
-
-        # # Reset the state
-        # self.nextObservation(0, self.stateLength)
-        # self.reward = 0.
-        # self.done = 0
-
-        # # Reset additional variables related to the trading activity
-        # self.t = self.stateLength
-        # self.numberOfShares = 0
-       
-        self.nextObservation(0, self.stateLength)
-        self.t = self.stateLength
-        self.reward = 0.
-        self.done = 0
-
-        return self.state
-
-    
-    def computeLowerBound(self, cash, numberOfShares, price):
-        # Computation of the RL action lower bound
-        deltaValues = - cash - numberOfShares * price * (1 + self.epsilon) * (1 + self.transactionCosts)
-        if deltaValues < 0:
-            lowerBound = deltaValues / (price * (2 * self.transactionCosts + (self.epsilon * (1 + self.transactionCosts))))
-        else:
-            lowerBound = deltaValues / (price * self.epsilon * (1 + self.transactionCosts))
-        return lowerBound
-    
 
     def step(self, action):
         # Stting of some local variables
@@ -229,3 +189,40 @@ class CryptoTradingEnv(gym.Env):
     
     def clip(self, value:float): 
         return np.clip(value, -self.clipingValue, self.clipingValue)
+    def reset(self):
+        print("***********reset***************")
+        # Reset the trading activity dataframe
+        # self.data['Position'] = 0
+        # self.data['Action'] = 0
+        # self.data['Holdings'] = 0.
+        # self.data['Cash'] = self.data['Cash'][0]
+        # self.data['Balance'] = self.data['Holdings'] + self.data['Cash']
+        # self.data['Returns'] = 0.
+
+        # # Reset the state
+        # self.nextObservation(0, self.stateLength)
+        # self.reward = 0.
+        # self.done = 0
+
+        # # Reset additional variables related to the trading activity
+        # self.t = self.stateLength
+        # self.numberOfShares = 0
+       
+        self.nextObservation(0, self.stateLength)
+        self.t = self.stateLength
+        self.reward = 0.
+        self.done = 0
+
+        return self.state
+
+    
+    def computeLowerBound(self, cash, numberOfShares, price):
+        # Computation of the RL action lower bound
+        deltaValues = - cash - numberOfShares * price * (1 + self.epsilon) * (1 + self.transactionCosts)
+        if deltaValues < 0:
+            lowerBound = deltaValues / (price * (2 * self.transactionCosts + (self.epsilon * (1 + self.transactionCosts))))
+        else:
+            lowerBound = deltaValues / (price * self.epsilon * (1 + self.transactionCosts))
+        return lowerBound
+    
+
